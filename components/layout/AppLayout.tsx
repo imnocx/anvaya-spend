@@ -63,7 +63,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         {/* Brand */}
         <Link href="/dashboard" className="flex items-center gap-2.5 px-2 py-3 mb-6 group">
           <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-black font-black tracking-tighter text-sm shadow-md group-hover:scale-105 transition-transform">
-            AV
+            <Image src="/logo.jpg" alt="ANVAYA logo" width={32} height={32} className="w-8 h-8 rounded-xl" />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-sm tracking-tight text-white flex items-center gap-1.5">
@@ -152,7 +152,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <header className={`md:hidden flex items-center justify-between px-4 py-3 border-b border-[#1A1A1A] bg-[#0A0A0A]/90 backdrop-blur-md sticky top-0 z-40 ${!isConfigured ? "mt-10" : ""}`}>
         <Link href="/dashboard" className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-black font-black text-xs">
-            AV
+            <Image src="/logo.jpg" alt="ANVAYA logo" width={32} height={32} className="w-8 h-8 rounded-xl" />
           </div>
           <span className="font-bold text-sm tracking-tight text-white">
             ANVAYA <span className="text-emerald-400 font-semibold text-xs">Spend</span>
