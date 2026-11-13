@@ -133,11 +133,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # Opsional: aktifkan scan foto struk di sisi server
-OPENAI_API_KEY=your-openai-api-key-here
-OPENAI_RECEIPT_MODEL=gpt-4.1-mini
+GEMINI_API_KEY=your-gemini-api-key-here
+GEMINI_RECEIPT_MODEL=gemini-3.5-flash-lite
 ```
 
-Untuk memakai pemindaian struk, buat API key di OpenAI dan simpan hanya sebagai `OPENAI_API_KEY` di server/deployment (jangan memakai prefix `NEXT_PUBLIC_`). Pilih foto JPG, PNG, atau WEBP hingga 8 MB pada modal **Tambah Transaksi**. Aplikasi mengirim foto ke route server untuk diekstrak, mengisi form, lalu pengguna tetap mengonfirmasi dengan tombol **Simpan Transaksi**.
+Untuk memakai pemindaian struk, buat API key di Google AI Studio dan simpan hanya sebagai `GEMINI_API_KEY` di server/deployment (jangan memakai prefix `NEXT_PUBLIC_`). Pemindaian menggunakan `gemini-3.5-flash-lite`, yang mendukung input gambar dan structured output. Pilih foto JPG, PNG, atau WEBP hingga 8 MB pada modal **Tambah Transaksi**. Aplikasi mengirim foto ke route server untuk diekstrak, mengisi form, lalu pengguna tetap mengonfirmasi dengan tombol **Simpan Transaksi**.
+
+> **Privasi:** aplikasi tidak menyimpan foto struk. Namun, foto dikirim ke Gemini untuk diekstrak. Pada Gemini Free Tier, Google menyatakan data dapat digunakan untuk meningkatkan produknya; jangan gunakan fitur ini untuk dokumen yang sangat sensitif.
 
 ---
 

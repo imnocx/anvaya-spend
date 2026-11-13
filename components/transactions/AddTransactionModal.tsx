@@ -190,7 +190,7 @@ export function AddTransactionModal() {
               </button>
             </div>
             {scanError && <p role="alert" className="mt-2 text-xs text-rose-400">{scanError}</p>}
-            {!scanError && <p className="mt-2 text-[11px] text-zinc-500">Periksa hasil scan sebelum disimpan. Foto tidak disimpan oleh aplikasi.</p>}
+            {!scanError && <p className="mt-2 text-[11px] text-zinc-500">Periksa hasil scan sebelum disimpan. Foto tidak disimpan aplikasi, tetapi dikirim ke Gemini untuk dipindai.</p>}
           </div>
 
           {/* Type Selector (Tabs) */}

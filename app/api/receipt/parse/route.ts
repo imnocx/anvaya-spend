@@ -37,10 +37,10 @@ function isReceiptResult(value: unknown): value is {
 }
 
 export async function POST(request: Request) {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "Pemindaian struk belum dikonfigurasi. Tambahkan OPENAI_API_KEY pada server." },
+      { error: "Pemindaian struk belum dikonfigurasi. Tambahkan GEMINI_API_KEY pada server." },
       { status: 503 }
     );
   }
@@ -51,40 +51,43 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Foto struk tidak valid." }, { status: 400 });
     }
 
-    const base64 = image.split(",")[1] || "";
+    const [metadata, base64 = ""] = image.split(",");
+    const mimeType = metadata.match(/^data:(image\/(?:png|jpeg|webp));base64$/)?.[1];
+    if (!mimeType) {
+      return NextResponse.json({ error: "Format foto harus JPG, PNG, atau WEBP." }, { status: 400 });
+    }
     if ((base64.length * 3) / 4 > MAX_IMAGE_BYTES) {
       return NextResponse.json({ error: "Ukuran foto maksimal 8 MB." }, { status: 413 });
     }
 
     const today = new Date().toISOString().slice(0, 10);
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const model = process.env.GEMINI_RECEIPT_MODEL || "gemini-3.5-flash-lite";
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_RECEIPT_MODEL || "gpt-4.1-mini",
-        store: false,
-        input: [
+        contents: [
           {
-            role: "user",
-            content: [
+            parts: [
               {
-                type: "input_text",
                 text: `Baca foto bukti transaksi Indonesia ini. Ekstrak hanya transaksi utama yang benar-benar terlihat. Nominal harus berupa angka Rupiah tanpa pemisah. Tentukan type: expense untuk pembayaran/pembelian, income untuk dana yang diterima. Pilih category hanya dari: expense = Makanan, Transportasi, Belanja, Pendidikan, Hiburan, Tagihan, Kesehatan, Lainnya; income = Gaji, Uang Saku, Investasi, Bonus, Penjualan, Lainnya. Gunakan nama merchant/ringkasan singkat sebagai description. Tanggal harus YYYY-MM-DD; jika tanggal tidak terlihat gunakan ${today}. Jangan menebak nominal.`,
               },
-              { type: "input_image", image_url: image, detail: "high" },
+              {
+                inline_data: {
+                  mime_type: mimeType,
+                  data: base64,
+                },
+              },
             ],
           },
         ],
-        text: {
-          format: {
-            type: "json_schema",
-            name: "receipt_transaction",
-            strict: true,
-            schema: receiptSchema,
-          },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseJsonSchema: receiptSchema,
+          temperature: 0,
         },
       }),
     });
@@ -94,8 +97,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Foto belum bisa dipindai. Coba lagi." }, { status: 502 });
     }
 
-    const payload = (await response.json()) as { output_text?: string };
-    const result: unknown = JSON.parse(payload.output_text || "{}");
+    const payload = (await response.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
+    const result: unknown = JSON.parse(text || "{}");
     if (!isReceiptResult(result)) {
       return NextResponse.json({ error: "Data pada struk tidak terbaca dengan yakin." }, { status: 422 });
     }
