@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { X, ArrowDownLeft, ArrowUpRight, Calendar, Tag, FileText, Check, Camera, Loader2 } from "lucide-react";
+import { X, ArrowDownLeft, ArrowUpRight, Calendar, Tag, FileText, Check } from "lucide-react";
 import { useTransactions } from "@/context/TransactionContext";
 import { CATEGORIES_EXPENSE, CATEGORIES_INCOME, formatRupiah } from "@/lib/utils";
 
@@ -185,7 +185,7 @@ export function AddTransactionModal() {
                 disabled={isScanning}
                 className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-black transition-colors hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                {isScanning ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" /> : <span aria-hidden="true">📷</span>}
                 {isScanning ? "Memindai..." : "Pilih Foto"}
               </button>
             </div>
