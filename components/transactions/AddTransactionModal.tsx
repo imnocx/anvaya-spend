@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { X, ArrowDownLeft, ArrowUpRight, Calendar, Tag, FileText, Check } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { X, ArrowDownLeft, ArrowUpRight, Calendar, Tag, FileText, Check, Camera, Loader2 } from "lucide-react";
 import { useTransactions } from "@/context/TransactionContext";
 import { CATEGORIES_EXPENSE, CATEGORIES_INCOME, formatRupiah } from "@/lib/utils";
 
@@ -16,15 +16,18 @@ export function AddTransactionModal() {
     return new Date().toISOString().split("T")[0];
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Switch default category when type changes
+  // Keep the category valid when the transaction type changes without
+  // overwriting a category supplied by the receipt scanner.
   useEffect(() => {
-    if (type === "expense") {
-      setCategory(CATEGORIES_EXPENSE[0]);
-    } else {
-      setCategory(CATEGORIES_INCOME[0]);
+    const categories = type === "expense" ? CATEGORIES_EXPENSE : CATEGORIES_INCOME;
+    if (!categories.includes(category as never)) {
+      setCategory(categories[0]);
     }
-  }, [type]);
+  }, [type, category]);
 
   // Handle escape key
   useEffect(() => {
@@ -75,6 +78,59 @@ export function AddTransactionModal() {
 
   const numAmount = parseFloat(amount || "0");
 
+  const handleReceiptSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setScanError("Pilih file gambar (JPG, PNG, atau WEBP).");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setScanError("Ukuran foto maksimal 8 MB.");
+      return;
+    }
+
+    setScanError(null);
+    setIsScanning(true);
+    try {
+      const image = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Foto tidak dapat dibaca."));
+        reader.readAsDataURL(file);
+      });
+      const response = await fetch("/api/receipt/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image }),
+      });
+      const result = await response.json() as {
+        error?: string;
+        type?: "income" | "expense";
+        amount?: number;
+        category?: string;
+        description?: string;
+        transaction_date?: string;
+      };
+      if (!response.ok || !result.amount || !result.type || !result.category || !result.transaction_date) {
+        throw new Error(result.error || "Foto belum bisa dipindai.");
+      }
+
+      const availableCategories = result.type === "expense" ? CATEGORIES_EXPENSE : CATEGORIES_INCOME;
+      setType(result.type);
+      setAmount(String(Math.round(result.amount)));
+      setCategory(availableCategories.includes(result.category as never) ? result.category : "Lainnya");
+      setDescription(result.description || "Transaksi dari foto struk");
+      setTransactionDate(result.transaction_date);
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "Foto belum bisa dipindai.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
@@ -109,6 +165,34 @@ export function AddTransactionModal() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto pt-4 space-y-5">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            capture="environment"
+            className="hidden"
+            onChange={handleReceiptSelected}
+          />
+          <div className="rounded-xl border border-dashed border-emerald-500/30 bg-emerald-500/5 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-emerald-300">Scan foto struk</p>
+                <p className="mt-0.5 text-xs text-zinc-400">Nominal, tanggal, dan kategori akan diisi otomatis.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isScanning}
+                className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-emerald-400 px-3 py-2 text-xs font-semibold text-black transition-colors hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                {isScanning ? "Memindai..." : "Pilih Foto"}
+              </button>
+            </div>
+            {scanError && <p role="alert" className="mt-2 text-xs text-rose-400">{scanError}</p>}
+            {!scanError && <p className="mt-2 text-[11px] text-zinc-500">Periksa hasil scan sebelum disimpan. Foto tidak disimpan aplikasi, tetapi dikirim ke Gemini untuk dipindai.</p>}
+          </div>
+
           {/* Type Selector (Tabs) */}
           <div className="grid grid-cols-2 p-1 bg-[#151515] rounded-xl border border-[#222222]">
             <button

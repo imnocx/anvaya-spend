@@ -28,6 +28,7 @@
    - Pengeluaran (Makanan, Transportasi, Belanja, Pendidikan, Hiburan, Tagihan, Kesehatan, Lainnya).
    - Live format Rupiah otomatis saat mengetik (`Rp1.250.000`).
    - Optimistic UI updates.
+   - Scan foto struk untuk mengisi nominal, jenis transaksi, kategori, merchant, dan tanggal secara otomatis. Hasilnya selalu bisa diperiksa dan diedit sebelum disimpan; foto tidak disimpan oleh aplikasi.
 
 5. **Riwayat Transaksi Komprehensif**
    - Pencarian instan berdasarkan nama transaksi atau kategori.
@@ -130,7 +131,15 @@ Buat file `.env.local` di root proyek:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# Opsional: aktifkan scan foto struk di sisi server
+GEMINI_API_KEY=your-gemini-api-key-here
+GEMINI_RECEIPT_MODEL=gemini-3.5-flash-lite
 ```
+
+Untuk memakai pemindaian struk, buat API key di Google AI Studio dan simpan hanya sebagai `GEMINI_API_KEY` di server/deployment (jangan memakai prefix `NEXT_PUBLIC_`). Pemindaian menggunakan `gemini-3.5-flash-lite`, yang mendukung input gambar dan structured output. Pilih foto JPG, PNG, atau WEBP hingga 8 MB pada modal **Tambah Transaksi**. Aplikasi mengirim foto ke route server untuk diekstrak, mengisi form, lalu pengguna tetap mengonfirmasi dengan tombol **Simpan Transaksi**.
+
+> **Privasi:** aplikasi tidak menyimpan foto struk. Namun, foto dikirim ke Gemini untuk diekstrak. Pada Gemini Free Tier, Google menyatakan data dapat digunakan untuk meningkatkan produknya; jangan gunakan fitur ini untuk dokumen yang sangat sensitif.
 
 ---
 
